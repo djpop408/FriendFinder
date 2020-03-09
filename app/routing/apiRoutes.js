@@ -18,7 +18,7 @@ module.exports = function(app) {
     // ---------------------------------------------------------------------------
   
     app.get("/api/friends", function(req, res) {
-      res.json(friendsData);
+      return res.json(friendsData);
     });
 
 // API POST Requests
@@ -33,25 +33,36 @@ module.exports = function(app) {
     // Note the code here. Our "server" will respond to requests and let users know if they have a table or not.
     // It will do this by sending out the value "true" have a table
     // req.body is available since we're using the body parsing middleware
-    if (tableData.length < 5) {
-      tableData.push(req.body);
-      res.json(true);
-    }
-    else {
-      waitListData.push(req.body);
-      res.json(false);
-    }
+    var bestMatch = {
+        name: "",
+        photo: "",
+        friendDifference: Infinity
+      };
+
+      var userData = req.body;
+      var userScores = userData.scores;
+      var totalDifference;
+  
+      for (var i = 0; i < friendsData.length; i++) {
+        var currentFriend = friendsData[i];
+        totalDifference = 0;
+  
+        console.log(currentFriend.name);
+  
+        for (var j = 0; j < currentFriend.scores.length; j++) {
+          var currentFriendScore = currentFriend.scores[j];
+          var currentUserScore = userScores[j];
+          totalDifference += Math.abs(parseInt(currentUserScore) - parseInt(currentFriendScore));
+        }
+  
+        if (totalDifference <= bestMatch.friendDifference) {
+          bestMatch.name = currentFriend.name;
+          bestMatch.photo = currentFriend.photo;
+          bestMatch.friendDifference = totalDifference;
+        }
+      }
+      friendsData.push(userData);
+      res.json(bestMatch);
   });
 
-  // ---------------------------------------------------------------------------
-  // I added this below code so you could clear out the table while working with the functionality.
-  // Don"t worry about it!
-
-  app.post("/api/clear", function(req, res) {
-    // Empty out the arrays of data
-    tableData.length = 0;
-    waitListData.length = 0;
-
-    res.json({ ok: true });
-  });
 };
